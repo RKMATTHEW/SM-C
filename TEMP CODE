@@ -1,0 +1,135 @@
+#include <OneWire.h>
+#include <DallasTemperature.h>
+
+// Data wire is plugged into port 7 on the Arduino
+#define ONE_WIRE_BUS 7
+// Setup a oneWire instance to communicate with any OneWire devices (not just Maxim/Dallas temperature ICs)
+OneWire oneWire(ONE_WIRE_BUS);
+
+// Pass our oneWire reference to Dallas Temperature. 
+DallasTemperature sensors(&oneWire);
+
+int numberOfDevices; // Number of temperature devices found
+int currentResolution ;
+int desiredResolution ;
+DeviceAddress tempDeviceAddress; // We'll use this variable to store a found device address
+void setup(void) { 
+     sensors.begin();
+     Serial.begin(9600);   // Start up the library  sensors.begin()
+  //Baud rate how many serials are sent on the line
+  
+  // Grab a count of devices on the wire
+  numberOfDevices = sensors.getDeviceCount();
+  
+  // locate devices on the bus
+  Serial.print("Locating devices...");
+  Serial.print("Found ");
+  Serial.print(numberOfDevices, DEC);
+  Serial.println(" devices.");
+
+  // Loop through each device, print out address
+  for(int i=0;i<numberOfDevices; i++) {
+    // Search the wire for address
+    if(sensors.getAddress(tempDeviceAddress, i)) {
+      Serial.print("Found device ");
+      Serial.print(i, DEC);
+      Serial.print(" with address: ");
+      printAddress(tempDeviceAddress);
+    } else {
+      Serial.print("Found ghost device at ");
+      Serial.print(i, DEC);
+      Serial.print(" but could not detect address. Check power and cabling");
+    }
+  }
+   delay(500);
+  
+  //Get Resoultuion of the sensor
+   Serial.println();
+   Serial.print("The current resolution of this device is set to ");
+   currentResolution = sensors.getResolution(tempDeviceAddress);
+   Serial.print(currentResolution);
+   Serial.println(" bits.");
+
+
+      
+    Serial.println();
+    Serial.println("Please enter the desired resolution of 9,10,11 or 12 bit)");
+     
+   while(Serial.available() == 0) // remain here until told to break
+{
+  
+}
+  desiredResolution = Serial.parseInt();
+
+  sensors.setResolution(tempDeviceAddress,desiredResolution);
+
+}
+
+void loop(void) { 
+  
+  sensors.requestTemperatures(); // Send the command to get temperatures
+  
+  // Loop through each device, print out temperature data
+  for(int i=0;i<numberOfDevices; i++) {
+    // Search the wire for address
+    if(sensors.getAddress(tempDeviceAddress, i)){
+    
+    // Output the device ID
+    Serial.println(); 
+    Serial.print("The current temperature for device: ");
+    Serial.print(i,DEC);
+
+    // Print the data
+    float tempC = sensors.getTempC(tempDeviceAddress);
+    Serial.print(" is  ");
+    
+    switch(desiredResolution) {
+  case 9:
+    // 9 Bit resolution
+     Serial.print(tempC,1);
+    break;
+  case 10:
+    // 10 Bit resolution
+     Serial.print(tempC,2);
+    break;
+  case 11:
+    // 11 Bit resolution
+     Serial.print(tempC,3);
+    break;
+
+  case 12:
+    // 12 Bit resolution
+     Serial.print(tempC,4);
+    break;
+    
+    
+    }
+   
+    Serial.println("\xC2\xB0""C");//prints "degree"symbol, followed by C
+    //Serial.println(DallasTemperature::toFahrenheit(tempC)); // Converts tempC to Fahrenheit
+    }    
+  }
+
+   delay(3000);
+   
+
+ /* Serial.println();
+   Serial.println("Please hit G to continue ");
+      
+  while(true) // remain here until told to break
+{
+  if(Serial.available() > 0) // did something come in?
+    if(Serial.read() == 'G') // is that something the char G?
+      break;
+}
+*/
+
+}
+
+// function to print a device address
+void printAddress(DeviceAddress deviceAddress) {
+  for (uint8_t i = 0; i < 8; i++) {
+    if (deviceAddress[i] < 16) Serial.print("0");
+      Serial.print(deviceAddress[i], HEX);
+  }
+}
