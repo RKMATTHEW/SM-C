@@ -1,0 +1,104 @@
+//For display, must have SDA AND SCL connected and analog 4 = blue and analog 5 = yellow
+
+#include <OneWire.h>
+#include <DallasTemperature.h>
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h> 
+
+
+// Data wire is plugged into port 3 digital on the Arduino
+#define ONE_WIRE_BUS 3
+
+// Setup a oneWire instance to communicate with any OneWire devices (not just Maxim/Dallas temperature ICs)
+OneWire oneWire(ONE_WIRE_BUS);
+
+// Pass our oneWire reference to Dallas Temperature. 
+DallasTemperature sensors(&oneWire);
+
+const int relayPin = 8; //pin 8
+const int moistureSenPin = 3; //pin 3 analog
+int sensorValue = 0;
+const int dry = 594; // in soil
+const int wet = 279; // in soil
+Adafruit_SSD1306 display = Adafruit_SSD1306(128, 64, & Wire, -1);
+
+void setup(void) {
+  // start serial port
+  Serial.begin(115200);
+    if(!display.begin(SSD1306_SWITCHCAPVCC, 0x3D)) { 
+  Serial.println(F("SSD1306 allocation failed"));
+  for(;;);
+}
+  delay(2000);
+ display.clearDisplay();
+ display.setTextColor(WHITE);
+
+  // Start up the library
+  sensors.begin();
+  //begins communication with serial monitor
+  pinMode(relayPin, OUTPUT);
+  //sets pin 8 to output
+  pinMode(moistureSenPin, INPUT);
+  //sets pin 2 to input
+  digitalWrite(relayPin, LOW);
+  //turns on relay, in turn turning on pump
+  delay(2000);
+  //runs pump for 2 seconds
+}
+
+void loop() {
+delay(1000);
+display.setCursor(0,0);
+display.setTextSize(1);
+display.clearDisplay();
+
+sensors.requestTemperatures(); // Send the command to get temperatures
+// getting temperature of the sensor in index
+float tempF = sensors.getTempFByIndex(0);
+
+String tempString = String(tempF,2); // parameters include decimal value & decimal places
+
+Serial.print(tempString);
+Serial.println(" ");
+display.setCursor(0,0);
+display.setTextSize(1);
+display.clearDisplay();
+display.print("temperature: ");
+display.setCursor(0,10);
+display.setTextSize(2);
+display.print(tempF);
+display.print(" ");
+display.setTextSize(1);
+display.cp437(true);
+display.write(167);
+display.setTextSize(2);
+display.print("F");
+display.setCursor(0,30);
+display.setTextSize(1);
+display.print("moisture: ");
+sensorValue = analogRead(moistureSenPin);//sets "sensorValue" to input value from A0
+int MoisturePercentage = map(sensorValue, wet, dry, 100, 0);
+String HumdStr = String(MoisturePercentage);
+Serial.println(HumdStr);
+display.setCursor(0,40);
+display.setTextSize(2);
+display.print(MoisturePercentage);
+display.print(" ");
+display.print("%");
+display.display();
+delay(1000);
+
+if(MoisturePercentage < 50)
+{
+digitalWrite(relayPin, LOW);
+//if moisture level is above 500, turns on pump
+}
+else
+{
+digitalWrite(relayPin, HIGH);
+//if moisture level is not above 500, turns off pump
+}
+delay(1000);
+//waits 1 second before re-checking moisture level
+}
