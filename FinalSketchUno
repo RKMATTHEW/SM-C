@@ -7,16 +7,13 @@
 #include <Adafruit_SSD1306.h> 
 
 
-// Data wire is plugged into port 3 digital on the Arduino
-#define ONE_WIRE_BUS 3
 
-// Setup a oneWire instance to communicate with any OneWire devices (not just Maxim/Dallas temperature ICs)
+#define ONE_WIRE_BUS 3 //pin 3 digital
 OneWire oneWire(ONE_WIRE_BUS);
 
-// Pass our oneWire reference to Dallas Temperature. 
-DallasTemperature sensors(&oneWire);
+DallasTemperature sensors(&oneWire); // Pass our oneWire reference to Dallas Temperature.
 
-const int relayPin = 8; //pin 8
+const int relayPin = 4; //pin 4 digital
 const int moistureSenPin = 3; //pin 3 analog
 int sensorValue = 0;
 const int dry = 594; // in soil
@@ -89,16 +86,14 @@ display.print("%");
 display.display();
 delay(1000);
 
-if(MoisturePercentage < 50)
-{
-digitalWrite(relayPin, LOW);
-//if moisture level is above 500, turns on pump
-}
-else
+if(MoisturePercentage > 60)
 {
 digitalWrite(relayPin, HIGH);
-//if moisture level is not above 500, turns off pump
+//if moisture level is above 60, turns off pump
 }
-delay(1000);
-//waits 1 second before re-checking moisture level
+else if(MoisturePercentage < 40)
+{
+digitalWrite(relayPin, LOW);
+//if moisture level is below 40, turn on pump
+}
 }
